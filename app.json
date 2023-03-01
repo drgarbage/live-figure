@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "live-figure",
+    "slug": "live-figure",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "name": "live-figure"
+}
