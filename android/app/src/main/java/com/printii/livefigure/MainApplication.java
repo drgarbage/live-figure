@@ -1,4 +1,4 @@
-package com.livefigure;
+package com.printii.livefigure;
 
 import android.app.Application;
 import android.content.res.Configuration;
