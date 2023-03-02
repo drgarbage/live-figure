@@ -2,16 +2,22 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Button, StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
+import { DARK_PRESETS, PRESETS } from './src/assets/presets';
+import { Preferences } from './src/components/preferences';
+import { AntDesign } from '@expo/vector-icons';
 import { img2img } from './src/api';
-import { Slider } from '@miblanchard/react-native-slider';
 import * as ImagePicker from 'expo-image-picker';
 import ImageView from "react-native-image-viewing";
+
+const pick = () => 
+  DARK_PRESETS[Math.floor(Math.random() * DARK_PRESETS.length)];
 
 export default function App() {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
-  const [host, setHost] = useState('https://50cb5f29-178c-4061.gradio.live');
+  const [host, setHost] = useState('http://dev.printii.com:7860');
   const [options, setOptions] = useState({
+    ...PRESETS.COS[0],
     denoising_strength: 0.42,
     cfg_scale: 8.5,
     width: 768,
@@ -19,16 +25,19 @@ export default function App() {
   })
   const [loading, setLoading] = useState(false);
   const [enlarge, setEnlarge] = useState(false);
+  const [showPreference, setShowPreference] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const config = async () => {
     const { status } = await BarCodeScanner.requestPermissionsAsync();
     if(status !== 'granted') return alert("Camera access not allowed.");
-    setHost(null);
+    setShowScanner(v => !v);
   }
 
   const barcodeScanned = ({type, data}) => {
-    if(!data.startsWith('https://') || !data.endsWith('.gradio.live')) return;
+    if(!data.startsWith('http')) return;
     setHost(data);
+    setShowScanner(false);
   }
 
   const capture = async () => {
@@ -82,7 +91,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
 
-      {!host &&
+      {showScanner &&
         <BarCodeScanner
           onBarCodeScanned={barcodeScanned}
           style={StyleSheet.absoluteFillObject}
@@ -109,36 +118,31 @@ export default function App() {
           color="white"
           />
       }
-      
-      <View style={styles.slider}>
-        <Slider
-          style={styles.fullWidth}
-          value={options.cfg_scale}
-          maximumValue={30}
-          minimumValue={1}
-          step={.5}
-          onValueChange={([cfg_scale]) => setOptions(opt => ({...opt, cfg_scale}))}
-        />
-        <Text style={styles.sliderText}>{options.cfg_scale}</Text>
-      </View>
-      <View style={styles.slider}>
-        <Slider
-          style={styles.slider}
-          value={options.denoising_strength}
-          maximumValue={1}
-          minimumValue={0}
-          step={.01}
-          onValueChange={([denoising_strength]) => setOptions(opt => ({...opt, denoising_strength}))}
-        />
-        <Text style={styles.sliderText}>{options.denoising_strength}</Text>
-      </View>
+
+      { showPreference && 
+        <>
+          <Preferences options={options} setOptions={setOptions} />
+          <AntDesign 
+            style={{position: 'absolute', left: 20, top: 80 }}
+            name="qrcode" 
+            size={24} 
+            color="silver" 
+            onPress={config} />
+          <AntDesign
+            style={{position: 'absolute', left: 20, top: 120 }}
+            name="warning" 
+            size={24} 
+            color="silver" 
+            onPress={() => setOptions(opt => ({...opt, ...pick()}))} />
+        </>
+      }
 
       <View style={styles.toolbar}>
-        <Button title='H' onPress={config} />
-        <Button title='PHOTO' onPress={pickImage} />
-        <Button title='CAM' onPress={capture} />
-        <Button title='APPLY' onPress={() => setImage(result)} />
-        <Button title='GEN' onPress={reload} />
+        <AntDesign name="setting" size={24} color="black" onPress={() => setShowPreference(v => !v)} />
+        <AntDesign name="picture" size={24} color="black" onPress={pickImage} />
+        <AntDesign name="camerao" size={44} color="black" onPress={capture} />
+        <Button style={{flex: 1}} title='GENERATE' color="black" onPress={reload} />
+        <AntDesign name="check" size={24} color="black"  onPress={() => setImage(result)} />
       </View>
 
       <ImageView 
@@ -168,7 +172,11 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   toolbar: {
+    width: '100%',
+    paddingHorizontal: 20,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   loading: {
     position: 'absolute',
