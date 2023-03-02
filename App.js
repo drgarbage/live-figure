@@ -137,6 +137,7 @@ export default function App() {
         <Button title='H' onPress={config} />
         <Button title='PHOTO' onPress={pickImage} />
         <Button title='CAM' onPress={capture} />
+        <Button title='APPLY' onPress={setImage(result)} />
         <Button title='RELOAD' onPress={reload} />
       </View>
 
