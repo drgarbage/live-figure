@@ -6,8 +6,13 @@ import { DARK_PRESETS, PRESETS } from './src/assets/presets';
 import { Preferences } from './src/components/preferences';
 import { AntDesign } from '@expo/vector-icons';
 import { img2img } from './src/api';
-import * as ImagePicker from 'expo-image-picker';
 import ImageView from "react-native-image-viewing";
+import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+
+const PNG_DATA_PREFIX = 'data:image/png;base64,';
 
 const pick = () => 
   DARK_PRESETS[Math.floor(Math.random() * DARK_PRESETS.length)];
@@ -16,17 +21,18 @@ export default function App() {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
   const [host, setHost] = useState('http://dev.printii.com:7860');
+  const [loading, setLoading] = useState(false);
+  const [enlarge, setEnlarge] = useState(false);
+  const [showPreference, setShowPreference] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [showViewerbar, setShowViewerbar] = useState(true);
   const [options, setOptions] = useState({
     ...PRESETS.COS[0],
     denoising_strength: 0.42,
     cfg_scale: 8.5,
     width: 768,
     height: 768,
-  })
-  const [loading, setLoading] = useState(false);
-  const [enlarge, setEnlarge] = useState(false);
-  const [showPreference, setShowPreference] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
+  });
 
   const config = async () => {
     const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -53,7 +59,7 @@ export default function App() {
     const rate = Math.min(768 / asset.width, 768 / asset.height);
     const size = { width: parseInt(asset.width * rate), height: parseInt(asset.height * rate)};
     setOptions(opt => ({...opt, ...size}));
-    setImage('data:image/jpeg;base64,' + asset.base64);
+    setImage(PNG_DATA_PREFIX + asset.base64);
   }
 
   const pickImage = async () => {
@@ -69,7 +75,51 @@ export default function App() {
     const rate = Math.min(768 / asset.width, 768 / asset.height);
     const size = { width: parseInt(asset.width * rate), height: parseInt(asset.height * rate)};
     setOptions(opt => ({...opt, ...size}));
-    setImage('data:image/jpeg;base64,' + asset.base64);
+    setImage(PNG_DATA_PREFIX + asset.base64);
+  }
+
+  const share = async () => {
+    if(!result) return;
+    try {
+
+      const raw = result.replace(PNG_DATA_PREFIX, '');
+      const uri = FileSystem.cacheDirectory + 'sharing.png';
+      await FileSystem.writeAsStringAsync(uri, raw, { encoding: FileSystem.EncodingType.Base64 });
+      Sharing.shareAsync(uri, { UTI: 'public.jpeg', mimeType: 'image/jpeg' });
+
+    } catch (err) {
+
+      alert(err);
+
+    }
+  }
+
+  const save = async () => {
+    if(!result) return;
+
+    try {
+
+      const permission = MediaLibrary.isAvailableAsync();
+
+      if(!permission)
+        return alert('Photo library not available.');
+  
+      const raw = result.replace(PNG_DATA_PREFIX, '');
+      let album = await MediaLibrary.getAlbumAsync("Live Figure");
+  
+      if(!album)
+        album = await MediaLibrary.createAlbumAsync("Live Figure", asset, false);
+  
+      const uri = FileSystem.cacheDirectory + 'generated.png';
+      await FileSystem.writeAsStringAsync(uri, raw, { encoding: FileSystem.EncodingType.Base64 });
+      const asset = await MediaLibrary.createAssetAsync(uri);
+      MediaLibrary.addAssetsToAlbumAsync([asset.id], album, false);
+      
+      alert('Photo Saved');
+
+    } catch (err) {
+      alert(err);
+    }
   }
 
   const reload = async () => {
@@ -77,7 +127,7 @@ export default function App() {
     try{
       setLoading(true);
       const sdResult = await img2img(image, options, host);
-      setResult('data:image/jpeg;base64,' + sdResult);
+      setResult(PNG_DATA_PREFIX + sdResult);
       setEnlarge(true);
     }catch(err){
       alert(err);
@@ -86,6 +136,8 @@ export default function App() {
       setLoading(false);
     }
   }
+
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -100,7 +152,7 @@ export default function App() {
 
       { !!host && 
         <TouchableOpacity 
-          onPress={()=>setEnlarge(true)}
+          onPress={() => setEnlarge(true)}
           style={styles.image}>
           <Image 
             source={{uri:image}} 
@@ -149,8 +201,25 @@ export default function App() {
         doubleTapToZoomEnabled
         visible={enlarge}
         onRequestClose={()=>setEnlarge(false)}
+        onPress={()=>setShowViewerbar(v => !v)}
         images={[{uri: result}]} 
         style={{width: 300, height: 300, alignItems: 'center', justifyContent: 'center' }} 
+        FooterComponent={() =>
+          <View style={styles.viewerbar}>
+            <AntDesign 
+              style={{marginRight: 20, display: showViewerbar ? 'flex' : 'none'}}
+              name="sharealt" 
+              size={24} 
+              color="white" 
+              onPress={share} />
+            <AntDesign
+              style={{marginRight: 20, display: showViewerbar ? 'flex' : 'none'}}
+              name="download" 
+              size={24} 
+              color="white" 
+              onPress={save} />
+          </View>
+        }
         />
     </SafeAreaView>
   );
@@ -170,13 +239,21 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
+    backgroundColor: 'black',
   },
   toolbar: {
     width: '100%',
+    height: 44,
+    backgroundColor: 'wthie',
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  viewerbar: {
+    height: 44,
+    marginBottom: 22,
+    flexDirection: 'row-reverse',
   },
   loading: {
     position: 'absolute',

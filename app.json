@@ -8,10 +8,25 @@
     ],
     "plugins": [
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access photo library.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+      [
+        "expo-barcode-scanner",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access photo library.",
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access photo library.",
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera."
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera.",
         }
       ]
     ],
