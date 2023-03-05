@@ -19,25 +19,40 @@
       [
         "expo-barcode-scanner",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access photo library.",
+          "photosPermission": "Allow $(PRODUCT_NAME) to access photo library."
         }
       ],
       [
         "expo-image-picker",
         {
           "photosPermission": "Allow $(PRODUCT_NAME) to access photo library.",
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access camera."
         }
       ]
     ],
     "android": {
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.CAMERA"
       ],
       "package": "com.printii.livefigure"
     },
     "ios": {
-      "bundleIdentifier": "com.printii.livefigure"
+      "bundleIdentifier": "com.printii.livefigure",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access photo library.",
+        "NSPhotoLibraryAddUsageDescription": "Allow $(PRODUCT_NAME) to save photos.",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6912a2f0-234e-46b0-9301-dd6348cb7f8e"
+      }
     }
   },
   "name": "live-figure"
