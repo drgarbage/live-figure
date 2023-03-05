@@ -56,7 +56,7 @@ export default function App() {
 
     if(captureResult.canceled) return;
     const asset = captureResult.assets[0];
-    const rate = Math.min(768 / asset.width, 768 / asset.height);
+    const rate = Math.min(1024 / asset.width, 1024 / asset.height);
     const size = { width: parseInt(asset.width * rate), height: parseInt(asset.height * rate)};
     setOptions(opt => ({...opt, ...size}));
     setImage(PNG_DATA_PREFIX + asset.base64);
