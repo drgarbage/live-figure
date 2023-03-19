@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Button, StyleSheet, Text, View, Image, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import { DARK_PRESETS, PRESETS } from './src/assets/presets';
 import { Preferences } from './src/components/preferences';
 import { AntDesign } from '@expo/vector-icons';
-import { img2img } from './src/api';
 import ImageView from "react-native-image-viewing";
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 
-const PNG_DATA_PREFIX = 'data:image/png;base64,';
+import { IMG_BASE_SIZE } from 'constants';
+import { DARK_PRESETS, PRESETS } from 'assets/presets';
+import { img2img } from 'apis';
+import { aspectFill as resizer, removeExifRotation, prefixPng } from 'utils';
+
 
 const pick = () => 
   DARK_PRESETS[Math.floor(Math.random() * DARK_PRESETS.length)];
@@ -30,8 +32,8 @@ export default function App() {
     ...PRESETS.COS[0],
     denoising_strength: 0.42,
     cfg_scale: 8.5,
-    width: 768,
-    height: 768,
+    width: IMG_BASE_SIZE,
+    height: IMG_BASE_SIZE,
   });
 
   const config = async () => {
@@ -55,11 +57,11 @@ export default function App() {
     });
 
     if(captureResult.canceled) return;
+
     const asset = captureResult.assets[0];
-    const rate = Math.min(1024 / asset.width, 1024 / asset.height);
-    const size = { width: parseInt(asset.width * rate), height: parseInt(asset.height * rate)};
+    const size = resizer(asset.width, asset.height);
     setOptions(opt => ({...opt, ...size}));
-    setImage(PNG_DATA_PREFIX + asset.base64);
+    setImage(asset.base64);
   }
 
   const pickImage = async () => {
@@ -71,21 +73,21 @@ export default function App() {
     });
 
     if(pickResult.canceled) return;
+
     const asset = pickResult.assets[0];
-    const rate = Math.min(768 / asset.width, 768 / asset.height);
-    const size = { width: parseInt(asset.width * rate), height: parseInt(asset.height * rate)};
+    const size = resizer(asset.width, asset.height);
+    const base64 = await removeExifRotation(prefixPng(asset.base64));
     setOptions(opt => ({...opt, ...size}));
-    setImage(PNG_DATA_PREFIX + asset.base64);
+    setImage(base64);
   }
 
   const share = async () => {
     if(!result) return;
     try {
 
-      const raw = result.replace(PNG_DATA_PREFIX, '');
       const uri = FileSystem.cacheDirectory + 'sharing.png';
-      await FileSystem.writeAsStringAsync(uri, raw, { encoding: FileSystem.EncodingType.Base64 });
-      Sharing.shareAsync(uri, { UTI: 'public.jpeg', mimeType: 'image/jpeg' });
+      await FileSystem.writeAsStringAsync(uri, result, { encoding: FileSystem.EncodingType.Base64 });
+      Sharing.shareAsync(uri, { UTI: 'public.jpeg', mimeType: 'image/png' });
 
     } catch (err) {
 
@@ -104,14 +106,13 @@ export default function App() {
       if(!permission)
         return alert('Photo library not available.');
   
-      const raw = result.replace(PNG_DATA_PREFIX, '');
       let album = await MediaLibrary.getAlbumAsync("Live Figure");
   
       if(!album)
         album = await MediaLibrary.createAlbumAsync("Live Figure", asset, false);
   
       const uri = FileSystem.cacheDirectory + 'generated.png';
-      await FileSystem.writeAsStringAsync(uri, raw, { encoding: FileSystem.EncodingType.Base64 });
+      await FileSystem.writeAsStringAsync(uri, result, { encoding: FileSystem.EncodingType.Base64 });
       const asset = await MediaLibrary.createAssetAsync(uri);
       MediaLibrary.addAssetsToAlbumAsync([asset.id], album, false);
       
@@ -126,8 +127,8 @@ export default function App() {
     if(!image || image.length == 0) return;
     try{
       setLoading(true);
-      const sdResult = await img2img(image, options, host);
-      setResult(PNG_DATA_PREFIX + sdResult);
+      const sdResult = await img2img(prefixPng(image), options, host);
+      setResult(sdResult);
       setEnlarge(true);
     }catch(err){
       alert(err);
@@ -155,7 +156,7 @@ export default function App() {
           onPress={() => setEnlarge(true)}
           style={styles.image}>
           <Image 
-            source={{uri:image}} 
+            source={{uri: prefixPng(image)}} 
             style={styles.image} 
             resizeMode='contain'
             />
@@ -202,7 +203,7 @@ export default function App() {
         visible={enlarge}
         onRequestClose={()=>setEnlarge(false)}
         onPress={()=>setShowViewerbar(v => !v)}
-        images={[{uri: result}]} 
+        images={[{uri: prefixPng(result)}]} 
         style={{width: 300, height: 300, alignItems: 'center', justifyContent: 'center' }} 
         FooterComponent={() =>
           <View style={styles.viewerbar}>
