@@ -34,6 +34,7 @@ const pick = () =>
 export default function App() {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
+  const [results, setResults] = useState([]);
   const [host, setHost] = useState('http://dev.printii.com:7860');
   const [loading, setLoading] = useState(false);
   const [enlarge, setEnlarge] = useState(false);
@@ -145,7 +146,10 @@ export default function App() {
           ...options, 
           ...depthMask(depthMaskOption)
         }, host);
-      setResult(sdResult);
+      if(sdResult.length > 1)
+        console.log(sdResult[1]);
+      setResult(sdResult[0]);
+      setResults(sdResult);
       setEnlarge(true);
     }catch(err){
       alert(err);
@@ -242,7 +246,7 @@ export default function App() {
         visible={enlarge}
         onRequestClose={()=>setEnlarge(false)}
         onPress={()=>setShowViewerbar(v => !v)}
-        images={[{uri: prefixPng(result)}]} 
+        images={results.map(item => ({uri: prefixPng(item)}))} 
         style={{width: 300, height: 300, alignItems: 'center', justifyContent: 'center' }} 
         FooterComponent={() =>
           <View style={styles.viewerbar}>

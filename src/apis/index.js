@@ -37,7 +37,7 @@ export const img2img = async (img, options, host) => {
 
   const result = await response.json();
 
-  return result.images[0];
+  return result.images;
 };
 
 
