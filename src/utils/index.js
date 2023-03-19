@@ -1,5 +1,5 @@
 import { manipulateAsync } from 'expo-image-manipulator';
-import { PNG_DATA_PREFIX, IMG_BASE_SIZE } from 'constants';
+import { PNG_DATA_PREFIX, JPG_DATA_PREFIX, IMG_BASE_SIZE } from 'constants';
 
 export const aspectFit = (width, height, r = IMG_BASE_SIZE) => {
   const rate = Math.min(r / width, r / height);
@@ -20,6 +20,11 @@ export const aspectFill = (width, height, r = IMG_BASE_SIZE) => {
 export const prefixPng = (base64Image) => 
   !!base64Image && !base64Image.startsWith(PNG_DATA_PREFIX) ?
     PNG_DATA_PREFIX + base64Image :
+    base64Image;
+
+export const prefixJpg = (base64Image) => 
+  !!base64Image && !base64Image.startsWith(JPG_DATA_PREFIX) ?
+  JPG_DATA_PREFIX + base64Image :
     base64Image;
 
 

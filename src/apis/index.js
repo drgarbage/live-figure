@@ -39,3 +39,28 @@ export const img2img = async (img, options, host) => {
 
   return result.images[0];
 };
+
+
+export const upscale = async (img, options, host) => {
+  const body = {
+    "upscaling_resize": 2,
+    "upscaler_1": "ESRGAN_4x",
+    "image": img,
+  };
+
+  const response = await fetch(`${host}/sdapi/v1/extra-single-image`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body),
+  });
+
+  if(!response.ok) 
+    throw new Error('Network Error: ' + response.status);
+
+  const result = await response.json();
+
+  return result.image;
+}

@@ -10,8 +10,19 @@ const selected = (options, key) =>
   PRESETS[key].map(item => item.prompt).indexOf(options.prompt) >= 0:
   false;
 
-export const Preferences = ({options, setOptions}) => 
-  <View style={{width: 300}}>
+const DEPTHS = {
+  '-1': 'none',
+  '0' : 'deep',
+  '1' : 'middle',
+  '2' : 'small',
+};
+
+export const Preferences = ({
+  options, setOptions, 
+  depthMaskOption, setDepthMaskOption,
+  onUpscale
+}) => 
+  <View style={styles.container}>
     <View style={{flexDirection: 'row', justifyContent: 'center'}}>
       {Object.keys(PRESETS).map((key) => 
         <Button 
@@ -21,19 +32,24 @@ export const Preferences = ({options, setOptions}) =>
           onPress={() => setOptions(opt => ({...opt, ...(pick(key))}))}
           />
       )}
+      <Button 
+        key="UP"
+        title="UP"
+        onPress={onUpscale}
+        />
     </View>
-    <View style={styles.slider}>
+    <View style={styles.block}>
       <Slider
-        style={styles.fullWidth}
+        style={styles.slider}
         value={options.cfg_scale}
         maximumValue={30}
         minimumValue={1}
         step={.5}
         onValueChange={([cfg_scale]) => setOptions(opt => ({...opt, cfg_scale}))}
       />
-      <Text style={styles.sliderText}>{options.cfg_scale}</Text>
+      <Text style={styles.sliderText}>{`details ${options.cfg_scale}`}</Text>
     </View>
-    <View style={styles.slider}>
+    <View style={styles.block}>
       <Slider
         style={styles.slider}
         value={options.denoising_strength}
@@ -42,7 +58,29 @@ export const Preferences = ({options, setOptions}) =>
         step={.01}
         onValueChange={([denoising_strength]) => setOptions(opt => ({...opt, denoising_strength}))}
       />
-      <Text style={styles.sliderText}>{options.denoising_strength}</Text>
+      <Text style={styles.sliderText}>{`differ ${options.denoising_strength}`}</Text>
+    </View>
+    <View style={styles.block}>
+      <Slider
+        style={styles.slider}
+        value={depthMaskOption.model}
+        maximumValue={2}
+        minimumValue={-1}
+        step={1}
+        onValueChange={([model]) => setDepthMaskOption(opt => ({...opt, model}))}
+      />
+      <Text style={styles.sliderText}>{`mask with ${DEPTHS[depthMaskOption.model]}`}</Text>
+    </View>
+    <View style={styles.block}>
+      <Slider
+        style={styles.slider}
+        value={depthMaskOption.cut}
+        maximumValue={255}
+        minimumValue={0}
+        step={1}
+        onValueChange={([cut]) => setDepthMaskOption(opt => ({...opt, cut}))}
+      />
+      <Text style={styles.sliderText}>{`cut at ${depthMaskOption.cut}`}</Text>
     </View>
 
     <Text 
@@ -53,16 +91,14 @@ export const Preferences = ({options, setOptions}) =>
 
 const styles = StyleSheet.create({
   fullWidth: {flex: 1, width: '100%' },
+  container: {
+    paddingHorizontal: 20,
+  },
+  block: {
+  },
   slider: {
-      width: '100%',
-      height: 44,
-      paddingLeft: 20,
-      paddingRight: 20,
-      alignItems: 'stretch',
-      justifyContent: 'center',
   },
   sliderText: {
-
   },
   button: {},
 });

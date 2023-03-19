@@ -12,9 +12,21 @@ import * as FileSystem from 'expo-file-system';
 
 import { IMG_BASE_SIZE } from 'constants';
 import { DARK_PRESETS, PRESETS } from 'assets/presets';
-import { img2img } from 'apis';
-import { aspectFill as resizer, removeExifRotation, prefixPng } from 'utils';
+import { img2img, upscale } from 'apis';
+import { aspectFill as resizer, removeExifRotation, prefixPng, prefixJpg } from 'utils';
 
+const depthMask = ({model, cut}) => 
+  (model >= 0 && model <= 2) ?
+  ({
+    "script_name": "Depth aware img2img mask",
+    "script_args": [
+        false, 
+        cut,  // 0 ~ 255
+        true, 384, 384, false,
+        model, // 0, 1, 2
+        true, true, false, false
+    ],
+  }) : {};
 
 const pick = () => 
   DARK_PRESETS[Math.floor(Math.random() * DARK_PRESETS.length)];
@@ -35,6 +47,7 @@ export default function App() {
     width: IMG_BASE_SIZE,
     height: IMG_BASE_SIZE,
   });
+  const [depthMaskOption, setDepthMaskOption] = useState({model: -1, cut: 0});
 
   const config = async () => {
     const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -127,12 +140,32 @@ export default function App() {
     if(!image || image.length == 0) return;
     try{
       setLoading(true);
-      const sdResult = await img2img(prefixPng(image), options, host);
+      const sdResult = await img2img(
+        prefixPng(image), {
+          ...options, 
+          ...depthMask(depthMaskOption)
+        }, host);
       setResult(sdResult);
       setEnlarge(true);
     }catch(err){
       alert(err);
       console.error(err);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  const onUpscale = async () => {
+    if(!image || image.length == 0) return;
+    // if(!result || result.length == 0) return;
+    try{
+      setLoading(true);
+      const usResult = await upscale(prefixJpg(image), {}. host);
+      setResult(usResult);
+      setEnlarge(true);
+    }catch(err){
+      console.error(err.name, err.message, err.stack);
+      alert(err);
     }finally{
       setLoading(false);
     }
@@ -174,7 +207,13 @@ export default function App() {
 
       { showPreference && 
         <>
-          <Preferences options={options} setOptions={setOptions} />
+          <Preferences 
+            options={options} 
+            setOptions={setOptions} 
+            depthMaskOption={depthMaskOption}
+            setDepthMaskOption={setDepthMaskOption}
+            onUpscale={onUpscale}
+            />
           <AntDesign 
             style={{position: 'absolute', left: 20, top: 80 }}
             name="qrcode" 
