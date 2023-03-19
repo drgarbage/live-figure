@@ -146,8 +146,6 @@ export default function App() {
           ...options, 
           ...depthMask(depthMaskOption)
         }, host);
-      if(sdResult.length > 1)
-        console.log(sdResult[1]);
       setResult(sdResult[0]);
       setResults(sdResult);
       setEnlarge(true);
