@@ -35,7 +35,7 @@ export default function App() {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState(null);
   const [results, setResults] = useState([]);
-  const [host, setHost] = useState('http://dev.printii.com:7860');
+  const [host, setHost] = useState('https://ai.printii.com');
   const [loading, setLoading] = useState(false);
   const [enlarge, setEnlarge] = useState(false);
   const [showPreference, setShowPreference] = useState(false);
