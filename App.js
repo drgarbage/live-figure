@@ -162,12 +162,13 @@ export default function App() {
     // if(!result || result.length == 0) return;
     try{
       setLoading(true);
-      const usResult = await upscale(prefixJpg(image), {}. host);
-      setResult(usResult);
+      const usResult = await upscale(prefixPng(image), options, host);
+      setResult(usResult[0]);
+      setResults(usResult);
       setEnlarge(true);
     }catch(err){
-      console.error(err.name, err.message, err.stack);
       alert(err);
+      console.error(err);
     }finally{
       setLoading(false);
     }
